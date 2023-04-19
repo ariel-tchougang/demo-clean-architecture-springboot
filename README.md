@@ -25,7 +25,7 @@ Technologies used:
 $ docker pull bitnami/rabbitmq:latest
 $ docker run --name rabbitmq bitnami/rabbitmq:latest
 ``` 
-![Bitnami RabbitMQ](https://hub.docker.com/r/bitnami/rabbitmq)
+More info at (https://hub.docker.com/r/bitnami/rabbitmq)
 
 Default web interface: http://localhost:15672/
 username: user

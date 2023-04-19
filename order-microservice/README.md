@@ -1,48 +1,97 @@
-# Demo e-commerce microservices application
+# Order microservices application
 > Using *Hexagonal (Ports & Adapters) Architecture & TDD*
 
-This application is composed of 5 microservices serving specific purposes:
-* user-microservice: with REST endpoints for user management (add new user, fetch user details, get orders by userId)
-* order-microservice: with REST endpoints for order management (create new order, get status, get status change history)
-* inventory-microservice: with REST endpoint for inventory management (check stock for a list of items)
-* payment-microservice: to process orders payment
-* shipment-microservice: with REST endpoint for shipment management (create a new shipment, check shipment status, check status change history, update shipment status)
+This microservice has 3 modules:
+* order-domain: where all use cases are described along with all inbound and outbound ports
+* order-adapters-out-persistence-dynamodb: outbound adapter for DynamoDB
+* order-application-springboot: hosting the executable OrderApplication
 
-Technologies used:
-* Java 17
-* Spring boot 3.0.5
-* Lombok
-* Maven
-* DynamoDB Local (docker container amazon/dynamodb-local:latest)
-* RabbitMQ as communication broker (docker container bitnami/rabbitmq:latest)
-* org.testcontainers
-* Junit 5
+## Inbound ports
+
+#### From web interactions
+* Create new order
+* Get order current status
+* Get order status change history
+
+#### From messaging (RabbitMQ) interactions
+* Update order status: from InsufficientStockForOrderEvent coming from inventory-microservice => CANCELLED
+* Update order status: from SufficientStockForOrderEvent coming from inventory-microservice => INVENTORY_CHECK_OK
+* Update order status: from PaymentFailedEvent coming from payment-microservice => CANCELLED
+* Update order status: from PaymentCompletedEvent coming from payment-microservice => PAYMENT_COMPLETED
+* Update order status: from ShipmentCreatedEvent coming from shipment-microservice => PROCESSING_IN_PROGRESS
+* Update order status: from ShipmentStatusChangedEvent coming from shipment-microservice => PENDING_DELIVERY, DELIVERED
+
+## Outbound ports
+
+#### To a repository (DynamoDB)
+* Create new order
+* Load order by id
+* Update order status
+
+#### To a communication broker (RabbitMQ)
+* Publish OrderCreatedEvent
+* Publish OrderStatusChangedEvent
+
+#### Different order status
+* CREATED 
+  * => triggers inventory check
+* INVENTORY_CHECK_OK
+  * => triggers process payment, 
+  * => triggers create order copy on user
+* PAYMENT_COMPLETED 
+  * => triggers create shipment,
+  * => triggers update order status on user
+* PROCESSING_IN_PROGRESS
+  * => triggers update order status on user
+* PENDING_DELIVERY
+  * => triggers update order status on user
+* DELIVERED
+  * => triggers update order status on user
+* CANCELLED
+  * => triggers update order status on user
+* UNKNOWN
+  * => triggers update order status on user
 
 ## Installing / Getting started
 
-#### Start RabbitMQ
-```console
-$ docker pull bitnami/rabbitmq:latest
-$ docker run --name rabbitmq bitnami/rabbitmq:latest
-``` 
-More info at (https://hub.docker.com/r/bitnami/rabbitmq)
+#### Depends on
+* RabbitMQ
+* DynamoDB Local
 
-Default web interface: http://localhost:15672/
-username: user
-password: bitnami
+#### Application properties (with default values)
+* server.port=8082
+* dynamodb.orders.uri=http://localhost:8000
+* dynamodb.orders.tableName=Orders
+* rabbitmq.host.uri=amqp://localhost:5672
+* rabbitmq.host.username=user
+* rabbitmq.host.password=bitnami
+* rabbitmq.order.exchangeName=application_exchange
+* rabbitmq.order.exchangeType=topic
+* rabbitmq.order.orderCreatedQueueName=order_created_queue
+* rabbitmq.order.orderCreatedRoutingKey=order-created-event
+* rabbitmq.order.orderStatusChangedQueueName=order_status_changed_queue
+* rabbitmq.order.orderStatusChangedRoutingKey=order-status-changed-event
+* rabbitmq.inventory.exchangeName=application_exchange
+* rabbitmq.inventory.exchangeType=topic
+* rabbitmq.inventory.sufficientStockQueueName=sufficient_stock_queue
+* rabbitmq.inventory.sufficientStockRoutingKey=sufficient-stock-event
+* rabbitmq.inventory.insufficientStockQueueName=insufficient_stock_queue
+* rabbitmq.inventory.insufficientStockRoutingKey=insufficient-stock-event
+* rabbitmq.payment.exchangeName=application_exchange
+* rabbitmq.payment.exchangeType=topic
+* rabbitmq.payment.paymentCompletedQueueName=payment_completed_queue
+* rabbitmq.payment.paymentCompletedRoutingKey=payment-completed-event
+* rabbitmq.payment.paymentFailedQueueName=payment_failed_queue
+* rabbitmq.payment.paymentFailedRoutingKey=payment-failed-event
+* rabbitmq.shipment.exchangeName=application_exchange
+* rabbitmq.shipment.exchangeType=topic
+* rabbitmq.shipment.shipmentCreatedQueueName=shipment_created_queue
+* rabbitmq.shipment.shipmentCreatedRoutingKey=shipment-created-event
+* rabbitmq.shipment.shipmentStatusChangedQueueName=shipment_status_changed_queue
+* rabbitmq.shipment.shipmentStatusChangedRoutingKey=shipment-status-changed-event
 
-#### Start DynamoDB Local
-```console
-$ docker pull amazon/dynamodb-local:latest
-$ docker run --name dynamodb-local -p 8000:8000 amazon/dynamodb-local -jar DynamoDBLocal.jar -sharedDb
-```
-
-#### Run each application separately
-* For user-microservice: UserApplication
-* For order-microservice: OrderApplication
-* For inventory-management: InventoryApplication
-* For payment-microservice: PaymentApplication
-* For shipment-microservice: ShipmentApplication
+#### Executable file
+* OrderApplication
 
 #### Use Swagger-ui to access each microservice
-> http://[microservice-host]:[port]/swagger-ui.html
+> http://[order-microservice-host]:[port]/swagger-ui.html
