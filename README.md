@@ -28,8 +28,8 @@ $ docker run --name rabbitmq bitnami/rabbitmq:latest
 More info at (https://hub.docker.com/r/bitnami/rabbitmq)
 
 Default web interface: http://localhost:15672/
-username: user
-password: bitnami
+* username: user
+* password: bitnami
 
 #### Start DynamoDB Local
 ```console
