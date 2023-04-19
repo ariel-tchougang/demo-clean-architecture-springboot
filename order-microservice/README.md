@@ -63,7 +63,7 @@ This microservice has 3 modules:
 * dynamodb.orders.uri=http://localhost:8000
 * dynamodb.orders.tableName=Orders
 * rabbitmq.host.uri=amqp://localhost:5672
-* rabbitmq.host.username=shipment
+* rabbitmq.host.username=user
 * rabbitmq.host.password=bitnami
 * rabbitmq.order.exchangeName=application_exchange
 * rabbitmq.order.exchangeType=topic
