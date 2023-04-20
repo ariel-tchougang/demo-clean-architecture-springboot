@@ -51,6 +51,7 @@
         <jakarta.validation.version>3.0.2</jakarta.validation.version>
         <org.hibernate.validator.version>8.0.0.Final</org.hibernate.validator.version>
         <org.glassfish.expressly.version>5.0.0</org.glassfish.expressly.version>
+        <springdoc-openapi-maven-plugin.version>1.4</springdoc-openapi-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -306,6 +307,19 @@
                             <phase>test</phase>
                             <goals>
                                 <goal>report</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.springdoc</groupId>
+                    <artifactId>springdoc-openapi-maven-plugin</artifactId>
+                    <version>${springdoc-openapi-maven-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <phase>integration-test</phase>
+                            <goals>
+                                <goal>generate</goal>
                             </goals>
                         </execution>
                     </executions>
